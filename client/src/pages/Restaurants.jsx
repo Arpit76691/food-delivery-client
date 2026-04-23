@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 
@@ -10,18 +10,20 @@ const Restaurants = () => {
 
   useEffect(() => {
     fetchRestaurants();
-  }, [searchParams.get('cuisine')]);
+  }, [searchParams]);
 
   const fetchRestaurants = async () => {
     try {
       setLoading(true);
+      setError('');
       const cuisine = searchParams.get('cuisine');
       const url = cuisine ? `/api/restaurants?cuisine=${cuisine}` : '/api/restaurants';
 
       const response = await api.get(url);
-      setRestaurants(response.data);
+      setRestaurants(response.data.restaurants || []);
     } catch (err) {
       setError('Failed to load restaurants');
+      setRestaurants([]);
     } finally {
       setLoading(false);
     }
@@ -38,6 +40,8 @@ const Restaurants = () => {
   return (
     <div className="container" style={styles.container}>
       <h1 style={styles.title}>All Restaurants</h1>
+
+      {error && <p style={styles.error}>{error}</p>}
 
       {restaurants.length === 0 ? (
         <p style={styles.empty}>No restaurants found</p>
@@ -60,14 +64,14 @@ const Restaurants = () => {
                 <p style={styles.description}>{restaurant.description}</p>
                 <div style={styles.meta}>
                   <span style={styles.rating}>
-                    ⭐ {restaurant.rating.toFixed(1)}
+                    {`★ ${restaurant.rating.toFixed(1)}`}
                   </span>
-                  <span style={styles.time}>🕐 {restaurant.deliveryTime}</span>
+                  <span style={styles.time}>{`🕐 ${restaurant.deliveryTime}`}</span>
                   <span style={styles.price}>{restaurant.priceRange}</span>
                 </div>
                 <div style={styles.cuisines}>
-                  {restaurant.cuisine?.slice(0, 3).map((c, i) => (
-                    <span key={i} style={styles.cuisineTag}>{c}</span>
+                  {restaurant.cuisine?.slice(0, 3).map((cuisine) => (
+                    <span key={cuisine} style={styles.cuisineTag}>{cuisine}</span>
                   ))}
                 </div>
               </div>
@@ -92,6 +96,10 @@ const styles = {
     padding: '60px',
     textAlign: 'center',
     fontSize: '1.2rem'
+  },
+  error: {
+    color: '#d63031',
+    marginBottom: '16px'
   },
   empty: {
     textAlign: 'center',

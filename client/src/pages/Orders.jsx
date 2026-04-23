@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../utils/api';
 
 const Orders = () => {
@@ -15,42 +15,32 @@ const Orders = () => {
       const response = await api.get('/api/orders/customer/myorders');
       setOrders(response.data);
     } catch (err) {
-      console.error('Failed to fetch orders');
+      console.error('Failed to fetch orders', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: '#fdcb6e',
-      confirmed: '#74b9ff',
-      preparing: '#a29bfe',
-      'out-for-delivery': '#00cec9',
-      delivered: '#00b894',
-      cancelled: '#d63031'
-    };
-    return colors[status] || '#636e72';
-  };
+  const getStatusColor = (status) => ({
+    pending: '#fdcb6e',
+    confirmed: '#74b9ff',
+    preparing: '#a29bfe',
+    'out-for-delivery': '#00cec9',
+    delivered: '#00b894',
+    cancelled: '#d63031'
+  }[status] || '#636e72');
 
-  const getStatusIcon = (status) => {
-    const icons = {
-      pending: '📝',
-      confirmed: '✅',
-      preparing: '👨‍🍳',
-      'out-for-delivery': '🚀',
-      delivered: '✅',
-      cancelled: '❌'
-    };
-    return icons[status] || '📦';
-  };
+  const getStatusIcon = (status) => ({
+    pending: '📝',
+    confirmed: '✅',
+    preparing: '👨‍🍳',
+    'out-for-delivery': '🚚',
+    delivered: '✅',
+    cancelled: '❌'
+  }[status] || '📦');
 
   if (loading) {
-    return (
-      <div className="container" style={styles.loading}>
-        Loading orders...
-      </div>
-    );
+    return <div className="container" style={styles.loading}>Loading orders...</div>;
   }
 
   return (
@@ -75,12 +65,7 @@ const Orders = () => {
                   <h3 style={styles.restaurantName}>{order.restaurant?.name}</h3>
                   <span style={styles.orderId}>Order #{order._id.slice(-6)}</span>
                 </div>
-                <span
-                  style={{
-                    ...styles.statusBadge,
-                    background: getStatusColor(order.status)
-                  }}
-                >
+                <span style={{ ...styles.statusBadge, background: getStatusColor(order.status) }}>
                   {getStatusIcon(order.status)} {order.status.replace('-', ' ')}
                 </span>
               </div>
@@ -130,97 +115,25 @@ const Orders = () => {
 };
 
 const styles = {
-  container: {
-    padding: '40px 20px'
-  },
-  title: {
-    fontSize: '2rem',
-    marginBottom: '30px'
-  },
-  loading: {
-    padding: '60px',
-    textAlign: 'center'
-  },
-  empty: {
-    textAlign: 'center',
-    padding: '60px',
-    color: '#636e72'
-  },
-  ordersList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px'
-  },
-  orderCard: {
-    padding: '20px',
-    cursor: 'pointer',
-    transition: 'box-shadow 0.3s'
-  },
-  orderHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '15px'
-  },
-  orderInfo: {
-    flex: 1
-  },
-  restaurantName: {
-    fontSize: '1.2rem',
-    marginBottom: '5px'
-  },
-  orderId: {
-    color: '#636e72',
-    fontSize: '0.85rem'
-  },
-  statusBadge: {
-    padding: '6px 12px',
-    borderRadius: '20px',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: 'white'
-  },
-  orderDetails: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '15px',
-    padding: '15px 0',
-    borderTop: '1px solid #dfe6e9'
-  },
-  detailRow: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px'
-  },
-  label: {
-    color: '#636e72',
-    fontSize: '0.85rem'
-  },
-  total: {
-    fontWeight: 'bold',
-    color: '#ff6b35',
-    fontSize: '1.1rem'
-  },
-  expandedDetails: {
-    marginTop: '15px',
-    paddingTop: '15px',
-    borderTop: '1px solid #dfe6e9'
-  },
-  itemsTitle: {
-    fontSize: '1rem',
-    marginBottom: '10px'
-  },
-  expandedItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '8px 0',
-    fontSize: '0.9rem'
-  },
-  addressSection: {
-    marginTop: '15px',
-    paddingTop: '15px',
-    borderTop: '1px dashed #dfe6e9'
-  }
+  container: { padding: '40px 20px' },
+  title: { fontSize: '2rem', marginBottom: '30px' },
+  loading: { padding: '60px', textAlign: 'center' },
+  empty: { textAlign: 'center', padding: '60px', color: '#636e72' },
+  ordersList: { display: 'flex', flexDirection: 'column', gap: '20px' },
+  orderCard: { padding: '20px', cursor: 'pointer', transition: 'box-shadow 0.3s' },
+  orderHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' },
+  orderInfo: { flex: 1 },
+  restaurantName: { fontSize: '1.2rem', marginBottom: '5px' },
+  orderId: { color: '#636e72', fontSize: '0.85rem' },
+  statusBadge: { padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600', color: 'white' },
+  orderDetails: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '15px 0', borderTop: '1px solid #dfe6e9' },
+  detailRow: { display: 'flex', flexDirection: 'column', gap: '5px' },
+  label: { color: '#636e72', fontSize: '0.85rem' },
+  total: { fontWeight: 'bold', color: '#ff6b35', fontSize: '1.1rem' },
+  expandedDetails: { marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #dfe6e9' },
+  itemsTitle: { fontSize: '1rem', marginBottom: '10px' },
+  expandedItem: { display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '0.9rem' },
+  addressSection: { marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #dfe6e9' }
 };
 
 export default Orders;

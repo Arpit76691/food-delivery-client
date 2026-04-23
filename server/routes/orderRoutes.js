@@ -20,7 +20,7 @@ import {
 
 const router = express.Router();
 
-router.get('/', protect, authorize('admin'), getAllOrders);
+
 router.post('/', protect, createOrderValidator, validate, createOrder);
 router.get('/customer/myorders', protect, getCustomerOrders);
 router.get('/restaurant/:restaurantId', protect, getRestaurantOrders);

@@ -33,6 +33,16 @@ export const CartProvider = ({ children }) => {
   }, [cart]);
 
   const addToCart = (item) => {
+    const itemRestaurantId = item.restaurant?._id || item.restaurant;
+    const currentRestaurantId = cart[0]?.restaurant?._id || cart[0]?.restaurant;
+
+    if (cart.length > 0 && currentRestaurantId && itemRestaurantId && currentRestaurantId !== itemRestaurantId) {
+      return {
+        ok: false,
+        message: 'You can only add items from one restaurant at a time. Clear your cart to switch restaurants.'
+      };
+    }
+
     setCart((prevCart) => {
       const existingItem = prevCart.find((i) => i._id === item._id);
       if (existingItem) {
@@ -42,6 +52,8 @@ export const CartProvider = ({ children }) => {
       }
       return [...prevCart, { ...item, quantity: 1 }];
     });
+
+    return { ok: true };
   };
 
   const removeFromCart = (itemId) => {

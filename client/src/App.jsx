@@ -13,6 +13,7 @@ import Cart from './pages/Cart';
 import Orders from './pages/Orders';
 import AdminDashboard from './pages/AdminDashboard';
 import RestaurantDashboard from './pages/RestaurantDashboard';
+import DeliveryDashboard from './pages/DeliveryDashboard';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -67,6 +68,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['restaurant']}>
               <RestaurantDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/delivery-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['delivery']}>
+              <DeliveryDashboard />
             </ProtectedRoute>
           }
         />

@@ -1,13 +1,20 @@
 import Restaurant from '../models/Restaurant.js';
 import MenuItem from '../models/MenuItem.js';
 
+const canManageRestaurant = (restaurant, user) => (
+  user.role === 'admin' || restaurant.owner?.toString() === user._id.toString()
+);
+
 export const getRestaurants = async (req, res) => {
   try {
-    const { cuisine, search, minRating, page = 1, limit = 10 } = req.query;
-    let query = { isApproved: true };
+    const { cuisine, search, minRating, owner, page = 1, limit = 10 } = req.query;
+    const query = {};
 
     if (cuisine) {
       query.cuisine = cuisine;
+    }
+    if (owner) {
+      query.owner = owner;
     }
     if (minRating) {
       query.rating = { $gte: parseFloat(minRating) };
@@ -29,7 +36,7 @@ export const getRestaurants = async (req, res) => {
     res.json({
       restaurants,
       totalPages: Math.ceil(count / limit),
-      currentPage: page,
+      currentPage: Number(page),
       total: count
     });
   } catch (error) {
@@ -84,7 +91,24 @@ export const updateRestaurant = async (req, res) => {
       return res.status(404).json({ message: 'Restaurant not found' });
     }
 
-    Object.assign(restaurant, req.body);
+    if (!canManageRestaurant(restaurant, req.user)) {
+      return res.status(403).json({ message: 'Not authorized to manage this restaurant' });
+    }
+
+    const allowedFields = ['name', 'description', 'deliveryTime', 'priceRange', 'image', 'address'];
+
+    allowedFields.forEach((field) => {
+      if (typeof req.body[field] !== 'undefined') {
+        restaurant[field] = req.body[field];
+      }
+    });
+
+    if (typeof req.body.cuisine !== 'undefined') {
+      restaurant.cuisine = Array.isArray(req.body.cuisine)
+        ? req.body.cuisine
+        : [req.body.cuisine];
+    }
+
     const updated = await restaurant.save();
 
     res.json(updated);
@@ -99,6 +123,10 @@ export const deleteRestaurant = async (req, res) => {
 
     if (!restaurant) {
       return res.status(404).json({ message: 'Restaurant not found' });
+    }
+
+    if (!canManageRestaurant(restaurant, req.user)) {
+      return res.status(403).json({ message: 'Not authorized to manage this restaurant' });
     }
 
     await MenuItem.deleteMany({ restaurant: req.params.id });

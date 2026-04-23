@@ -47,6 +47,12 @@ const Navbar = () => {
                 </Link>
               )}
 
+              {user.role === 'delivery' && (
+                <Link to="/delivery-dashboard" style={styles.link}>
+                  Delivery Dashboard
+                </Link>
+              )}
+
               <span style={styles.userName}>Hi, {user.name}</span>
               <button onClick={handleLogout} style={styles.logoutBtn}>
                 Logout

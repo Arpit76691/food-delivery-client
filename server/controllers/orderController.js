@@ -1,9 +1,11 @@
 import Order from '../models/Order.js';
+import MenuItem from '../models/MenuItem.js';
+import Restaurant from '../models/Restaurant.js';
 
 export const getAllOrders = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
-    let query = {};
+    const query = {};
 
     if (status) {
       query.status = status;
@@ -22,7 +24,7 @@ export const getAllOrders = async (req, res) => {
     res.json({
       orders,
       totalPages: Math.ceil(count / limit),
-      currentPage: page,
+      currentPage: Number(page),
       total: count
     });
   } catch (error) {
@@ -34,6 +36,11 @@ export const createOrder = async (req, res) => {
   try {
     const { items, deliveryAddress, paymentMethod, specialInstructions, estimatedDeliveryTime } = req.body;
 
+    const firstMenuItem = await MenuItem.findById(items[0].menuItem).select('restaurant');
+    if (!firstMenuItem) {
+      return res.status(404).json({ message: 'Menu item not found' });
+    }
+
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const deliveryFee = subtotal >= parseFloat(process.env.FREE_DELIVERY_THRESHOLD || 500)
       ? 0
@@ -43,6 +50,7 @@ export const createOrder = async (req, res) => {
 
     const order = await Order.create({
       customer: req.user._id,
+      restaurant: firstMenuItem.restaurant,
       items,
       deliveryAddress,
       paymentMethod: paymentMethod || 'cash',
@@ -82,7 +90,16 @@ export const getCustomerOrders = async (req, res) => {
 export const getRestaurantOrders = async (req, res) => {
   try {
     const { status } = req.query;
-    let query = { restaurant: req.params.restaurantId };
+    const query = { restaurant: req.params.restaurantId };
+
+    const restaurant = await Restaurant.findById(req.params.restaurantId).select('owner');
+    if (!restaurant) {
+      return res.status(404).json({ message: 'Restaurant not found' });
+    }
+
+    if (req.user.role !== 'admin' && restaurant.owner?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to view these orders' });
+    }
 
     if (status) {
       query.status = status;
@@ -123,6 +140,15 @@ export const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const restaurant = await Restaurant.findById(order.restaurant).select('owner');
+    const isRestaurantOwner = restaurant?.owner?.toString() === req.user._id.toString();
+    const isAssignedDeliveryAgent = order.deliveryAgent?.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isAdmin && !isRestaurantOwner && !isAssignedDeliveryAgent) {
+      return res.status(403).json({ message: 'Not authorized to update this order' });
     }
 
     order.status = status;

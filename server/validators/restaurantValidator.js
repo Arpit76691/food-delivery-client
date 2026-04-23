@@ -1,5 +1,8 @@
 import { body, param } from 'express-validator';
 
+const priceRangeValues = ['\u20B9', '\u20B9\u20B9', '\u20B9\u20B9\u20B9', '\u20B9\u20B9\u20B9\u20B9'];
+const priceRangeMessage = 'Price range must be ₹, ₹₹, ₹₹₹, or ₹₹₹₹';
+
 export const createRestaurantValidator = [
   body('name')
     .trim()
@@ -21,7 +24,7 @@ export const createRestaurantValidator = [
 
   body('priceRange')
     .optional()
-    .isIn(['$', '$$', '$$$', '$$$$']).withMessage('Price range must be $, $$, $$$, or $$$$'),
+    .isIn(priceRangeValues).withMessage(priceRangeMessage),
 
   body('deliveryTime')
     .optional()
@@ -30,10 +33,8 @@ export const createRestaurantValidator = [
   body('address')
     .optional()
     .custom((value) => {
-      if (value && typeof value === 'object') {
-        if (value.city && value.city.length > 50) {
-          throw new Error('City must be less than 50 characters');
-        }
+      if (value && typeof value === 'object' && value.city && value.city.length > 50) {
+        throw new Error('City must be less than 50 characters');
       }
       return true;
     }),
@@ -59,7 +60,7 @@ export const updateRestaurantValidator = [
 
   body('priceRange')
     .optional()
-    .isIn(['$', '$$', '$$$', '$$$$']).withMessage('Price range must be $, $$, $$$, or $$$$'),
+    .isIn(priceRangeValues).withMessage(priceRangeMessage),
 
   body('rating')
     .optional()

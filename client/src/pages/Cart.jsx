@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -29,9 +29,16 @@ const Cart = () => {
       return;
     }
 
-    try {
-      const { subtotal, deliveryFee, tax, total } = getCartTotal();
+    const restaurantIds = new Set(
+      cart.map((item) => item.restaurant?._id || item.restaurant).filter(Boolean)
+    );
 
+    if (restaurantIds.size > 1) {
+      alert('Your cart contains items from multiple restaurants. Please keep one restaurant per order.');
+      return;
+    }
+
+    try {
       const orderData = {
         items: cart.map((item) => ({
           menuItem: item._id,
@@ -45,14 +52,12 @@ const Cart = () => {
         estimatedDeliveryTime: new Date(Date.now() + 40 * 60000)
       };
 
-      const response = await api.post('/api/orders', orderData);
-
+      await api.post('/api/orders', orderData);
       clearCart();
-
       alert('Order placed successfully!');
       navigate('/orders');
     } catch (err) {
-      alert('Failed to place order: ' + (err.response?.data?.message || 'Unknown error'));
+      alert(`Failed to place order: ${err.response?.data?.message || 'Unknown error'}`);
     }
   };
 
@@ -75,7 +80,6 @@ const Cart = () => {
       <h1 style={styles.title}>Shopping Cart</h1>
 
       <div style={styles.grid}>
-        {/* Cart Items */}
         <div className="card" style={styles.cartSection}>
           <h2 style={styles.sectionTitle}>Items</h2>
           {cart.map((item) => (
@@ -85,23 +89,10 @@ const Cart = () => {
                 <span style={styles.itemPrice}>₹{item.price}</span>
               </div>
               <div style={styles.quantityControls}>
-                <button
-                  onClick={() => updateQuantity(item._id, -1)}
-                  style={styles.qtyBtn}
-                >
-                  -
-                </button>
+                <button onClick={() => updateQuantity(item._id, -1)} style={styles.qtyBtn}>-</button>
                 <span style={styles.qty}>{item.quantity}</span>
-                <button
-                  onClick={() => updateQuantity(item._id, 1)}
-                  style={styles.qtyBtn}
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => removeFromCart(item._id)}
-                  style={styles.removeBtn}
-                >
+                <button onClick={() => updateQuantity(item._id, 1)} style={styles.qtyBtn}>+</button>
+                <button onClick={() => removeFromCart(item._id)} style={styles.removeBtn} aria-label={`Remove ${item.name}`}>
                   🗑️
                 </button>
               </div>
@@ -109,7 +100,6 @@ const Cart = () => {
           ))}
         </div>
 
-        {/* Checkout Form */}
         <div className="card" style={styles.checkoutSection}>
           <h2 style={styles.sectionTitle}>Checkout</h2>
 
@@ -118,7 +108,7 @@ const Cart = () => {
             <input
               type="text"
               value={deliveryAddress.street}
-              onChange={(e) => setDeliveryAddress({ ...deliveryAddress, street: e.target.value })}
+              onChange={(event) => setDeliveryAddress({ ...deliveryAddress, street: event.target.value })}
               placeholder="Enter street address"
             />
           </div>
@@ -129,7 +119,7 @@ const Cart = () => {
               <input
                 type="text"
                 value={deliveryAddress.city}
-                onChange={(e) => setDeliveryAddress({ ...deliveryAddress, city: e.target.value })}
+                onChange={(event) => setDeliveryAddress({ ...deliveryAddress, city: event.target.value })}
                 placeholder="City"
               />
             </div>
@@ -138,7 +128,7 @@ const Cart = () => {
               <input
                 type="text"
                 value={deliveryAddress.state}
-                onChange={(e) => setDeliveryAddress({ ...deliveryAddress, state: e.target.value })}
+                onChange={(event) => setDeliveryAddress({ ...deliveryAddress, state: event.target.value })}
                 placeholder="State"
               />
             </div>
@@ -149,17 +139,14 @@ const Cart = () => {
             <input
               type="text"
               value={deliveryAddress.zipCode}
-              onChange={(e) => setDeliveryAddress({ ...deliveryAddress, zipCode: e.target.value })}
+              onChange={(event) => setDeliveryAddress({ ...deliveryAddress, zipCode: event.target.value })}
               placeholder="ZIP Code"
             />
           </div>
 
           <div className="input-group">
             <label>Payment Method</label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-            >
+            <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
               <option value="cash">Cash on Delivery</option>
               <option value="card">Card</option>
               <option value="upi">UPI</option>
@@ -170,13 +157,12 @@ const Cart = () => {
             <label>Special Instructions</label>
             <textarea
               value={specialInstructions}
-              onChange={(e) => setSpecialInstructions(e.target.value)}
+              onChange={(event) => setSpecialInstructions(event.target.value)}
               placeholder="Any special instructions for delivery?"
               rows="3"
             />
           </div>
 
-          {/* Order Summary */}
           <div style={styles.summary}>
             <div style={styles.summaryRow}>
               <span>Subtotal</span>
@@ -196,11 +182,7 @@ const Cart = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleCheckout}
-            className="btn btn-primary"
-            style={styles.checkoutBtn}
-          >
+          <button onClick={handleCheckout} className="btn btn-primary" style={styles.checkoutBtn}>
             Place Order - ₹{totals.total.toFixed(2)}
           </button>
         </div>
@@ -210,109 +192,26 @@ const Cart = () => {
 };
 
 const styles = {
-  container: {
-    padding: '40px 20px'
-  },
-  empty: {
-    textAlign: 'center',
-    padding: '80px 20px'
-  },
-  title: {
-    fontSize: '2rem',
-    marginBottom: '30px'
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 400px',
-    gap: '30px'
-  },
-  cartSection: {
-    padding: '20px'
-  },
-  checkoutSection: {
-    padding: '20px',
-    height: 'fit-content'
-  },
-  sectionTitle: {
-    fontSize: '1.3rem',
-    marginBottom: '20px',
-    borderBottom: '2px solid #ff6b35',
-    paddingBottom: '10px'
-  },
-  cartItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '15px 0',
-    borderBottom: '1px solid #dfe6e9'
-  },
-  itemInfo: {
-    flex: 1
-  },
-  itemName: {
-    fontSize: '1rem',
-    marginBottom: '5px'
-  },
-  itemPrice: {
-    color: '#ff6b35',
-    fontWeight: '600'
-  },
-  quantityControls: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px'
-  },
-  qtyBtn: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    background: '#f8f9fa',
-    border: '1px solid #dfe6e9',
-    fontSize: '1.2rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  qty: {
-    minWidth: '24px',
-    textAlign: 'center',
-    fontWeight: '600'
-  },
-  removeBtn: {
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '1.2rem'
-  },
-  row: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '15px'
-  },
-  summary: {
-    background: '#f8f9fa',
-    padding: '15px',
-    borderRadius: '8px',
-    marginTop: '20px'
-  },
-  summaryRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '8px 0'
-  },
-  totalRow: {
-    borderTop: '2px solid #dfe6e9',
-    marginTop: '8px',
-    paddingTop: '12px',
-    fontWeight: 'bold',
-    fontSize: '1.2rem'
-  },
-  checkoutBtn: {
-    width: '100%',
-    marginTop: '20px',
-    padding: '15px',
-    fontSize: '1.1rem'
-  }
+  container: { padding: '40px 20px' },
+  empty: { textAlign: 'center', padding: '80px 20px' },
+  title: { fontSize: '2rem', marginBottom: '30px' },
+  grid: { display: 'grid', gridTemplateColumns: '1fr 400px', gap: '30px' },
+  cartSection: { padding: '20px' },
+  checkoutSection: { padding: '20px', height: 'fit-content' },
+  sectionTitle: { fontSize: '1.3rem', marginBottom: '20px', borderBottom: '2px solid #ff6b35', paddingBottom: '10px' },
+  cartItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #dfe6e9' },
+  itemInfo: { flex: 1 },
+  itemName: { fontSize: '1rem', marginBottom: '5px' },
+  itemPrice: { color: '#ff6b35', fontWeight: '600' },
+  quantityControls: { display: 'flex', alignItems: 'center', gap: '10px' },
+  qtyBtn: { width: '32px', height: '32px', borderRadius: '50%', background: '#f8f9fa', border: '1px solid #dfe6e9', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  qty: { minWidth: '24px', textAlign: 'center', fontWeight: '600' },
+  removeBtn: { background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' },
+  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
+  summary: { background: '#f8f9fa', padding: '15px', borderRadius: '8px', marginTop: '20px' },
+  summaryRow: { display: 'flex', justifyContent: 'space-between', padding: '8px 0' },
+  totalRow: { borderTop: '2px solid #dfe6e9', marginTop: '8px', paddingTop: '12px', fontWeight: 'bold', fontSize: '1.2rem' },
+  checkoutBtn: { width: '100%', marginTop: '20px', padding: '15px', fontSize: '1.1rem' }
 };
 
 export default Cart;
