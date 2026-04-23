@@ -26,7 +26,8 @@ const app = express();
 
 // ✅ FIXED CORS
 app.use(cors({
-  origin: true,
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
 
