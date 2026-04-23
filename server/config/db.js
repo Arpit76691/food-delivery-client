@@ -1,11 +1,16 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is not defined");
+    }
+
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+
+    console.log("✅ MongoDB Connected");
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error("❌ DB Connection Error:", error.message);
     process.exit(1);
   }
 };
