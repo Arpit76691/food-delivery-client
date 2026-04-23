@@ -25,9 +25,12 @@ connectDB();
 const app = express();
 
 // ✅ FIXED CORS
-app.use(cors({
-  origin: "*"
+aapp.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
+
+app.options('*', cors());
 
 // ✅ HANDLE PREFLIGHT (VERY IMPORTANT)
 app.use((req, res, next) => {
